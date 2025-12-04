@@ -25,6 +25,13 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+venv_backend/
+__pycache__/
+*.pyc
+*.sqlite
+*.db
+.pytest_cache/
+backend/*.sqlite # ou db.sqlite
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
