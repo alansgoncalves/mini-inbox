@@ -4,8 +4,11 @@ from pathlib import Path
 from datetime import datetime
 
 # Importar o FastAPI, a base do modelo e a sessão do banco
-from fastapi import FastAPI, HTTPException
-from .models import Ticket, create_tables, SessionLocal 
+from fastapi import FastAPI, Depends, HTTPException
+from .models import Ticket, create_tables, SessionLocal
+from sqlalchemy.orm import Session
+from pydantic import BaseModel
+from typing import List, Optional
 
 # --- CONFIGURAÇÕES DE CAMINHO ---
 # Pega o caminho para o diretório raiz do projeto (main.py)
@@ -68,6 +71,23 @@ def seed_database():
         # Sempre fecha a sessão, independente de sucesso ou erro
         db.close()
 
+# --- SCHEMAS (Modelos Pydantic para Validação) ---
+# Define o schema (formato) dos dados de um ticket para a API
+# BaseModel do Pydantic valida e serializa os dados automaticamente
+class TicketBase(BaseModel):
+    # Campos que serão retornados na API
+    id: int  # ID único do ticket
+    created_at: datetime  # Data e hora de criação
+    customer_name: str  # Nome do cliente
+    channel: str  # Canal de origem (email, chat, telefone, etc)
+    subject: str  # Assunto/título do ticket
+    status: str  # Status atual (open, closed, pending, etc)
+    priority: str  # Prioridade (low, medium, high)
+
+    class Config:
+        # Permite que o Pydantic leia diretamente objetos ORM (SQLAlchemy)
+        # Sem isso, seria necessário converter manualmente o objeto Ticket para dict
+        from_attributes = True
 
 # --- INICIALIZAÇÃO DO APP ---
 
@@ -86,6 +106,9 @@ def startup_event():
 # Endpoint GET para retornar métricas do dashboard geradas pelo script ETL
 @app.get("/metrics", tags=["Dashboard"])
 def get_metrics():
+    """
+    Retorna as métricas prontas geradas pelo script ETL com pandas.
+    """
     # Verifica se o arquivo de métricas existe
     if not METRICS_FILE.exists():
         # Retorna erro 500 se o arquivo não for encontrado
@@ -110,3 +133,39 @@ def get_metrics():
     except Exception as e:
         # Captura qualquer outro erro inesperado
         raise HTTPException(status_code=500, detail=f"Erro desconhecido: {e}")
+
+# Endpoint GET para listar todos os tickets
+@app.get("/tickets", response_model=List[TicketBase], tags=["Tickets"])
+def list_tickets(
+    db: Session = Depends(get_db), # Injeta a sessão do banco via dependência
+    search: Optional[str] = None  # Parâmetro opcional de query string (?search=termo)
+):
+    """
+    Lista todos os tickets no banco de dados, com opção de filtrar por termos de busca.
+    A busca é aplicada no assunto (subject) ou no nome do cliente (customer_name).
+    
+    Exemplos de uso:
+    - GET /tickets → retorna todos os tickets
+    - GET /tickets?search=problema → retorna tickets com "problema" no subject ou customer_name
+    """
+
+    # Cria query base para buscar todos os tickets
+    query = db.query(Ticket) 
+    
+    # Lógica de Busca Simples
+    if search:
+        # Cria um filtro OR (OU): busca no subject OU customer_name (case-insensitive com .ilike)
+        search_filter = Ticket.subject.ilike(f"%{search}%") | \
+                        Ticket.customer_name.ilike(f"%{search}%")
+        # Aplica o filtro à query
+        query = query.filter(search_filter)
+        
+    # Ordena por data de criação de forma descendente (mais recentes primeiro)
+    # .desc() = ordem descendente (mais recentes primeiro)
+    # .all() = executa a query e retorna uma lista com todos os resultados
+    tickets = query.order_by(Ticket.created_at.desc()).all()
+    
+    # Retorna a lista de tickets
+    # O FastAPI e Pydantic convertem automaticamente os objetos ORM para JSON
+    # usando o schema TicketBase definido no response_model
+    return tickets
