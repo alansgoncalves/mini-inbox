@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { Ticket } from "@/lib/types";
 import { fetchTickets } from "@/lib/services";
@@ -30,9 +30,20 @@ export function TicketsTable({ initialTickets }: TicketsTableProps) {
         }
     }, []);
 
+    const isInitialMount = useRef(true);
+
     // Efeito para carregar tickets quando o termo de busca muda
-    useEffect(() => {
-        loadTickets(searchTerm);
+useEffect(() => {
+        // Verifica se é a primeira montagem do componente
+        if (isInitialMount.current) {
+            isInitialMount.current = false;
+            return; // Sai sem buscar
+        }
+        // Se o termo de busca não estiver vazio, a busca é feita
+        if (searchTerm.length > 0) {
+            loadTickets(searchTerm);
+        } 
+
     }, [searchTerm, loadTickets]);
 
     // Estilo básico para status
