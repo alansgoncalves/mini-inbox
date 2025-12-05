@@ -1,5 +1,6 @@
 import json
 import os
+import requests
 from pathlib import Path
 from datetime import datetime
 
@@ -89,6 +90,21 @@ class TicketBase(BaseModel):
         # Sem isso, seria necessário converter manualmente o objeto Ticket para dict
         from_attributes = True
 
+# Schema para definir quais campos podem ser atualizados
+class TicketUpdate(BaseModel):
+    """Define quais campos podem ser alterados no PATCH."""
+    # Usamos Optional, pois o usuário pode querer alterar apenas o status OU a priority
+    status: Optional[str] = None
+    priority: Optional[str] = None
+
+# Schema para a resposta da API após atualização
+class TicketResponse(TicketBase):
+    """
+    Schema para a resposta, herdando de TicketBase para incluir todos os campos.
+    É usado para garantir que o ticket retornado esteja no formato correto.
+    """
+    pass # Não adiciona campos novos, apenas reutiliza os de TicketBase
+
 # --- INICIALIZAÇÃO DO APP ---
 
 # Cria a instância do FastAPI
@@ -102,6 +118,27 @@ def startup_event():
     create_tables() 
     # Popula o banco se necessário
     seed_database()
+
+# --- CONFIGURAÇÃO DO N8N ---
+N8N_WEBHOOK_URL = os.environ.get(
+    "N8N_WEBHOOK_URL",
+    "http://localhost:5678/webhook/f3edc7d6-6ff1-44ee-a2be-475a3e839cc5" # <-- SUBSTITUA PELA SUA URL REAL
+)
+
+
+def send_to_n8n(ticket_data: dict):
+    """
+    Envia o payload de ticket atualizado para o webhook do n8n.
+    Esta função não bloqueia o endpoint principal (aqui é simplificado para não bloquear o response).
+    """
+    try:
+        # Envia uma requisição POST com JSON convertido para o webhook do n8n
+        response = requests.post(N8N_WEBHOOK_URL, json=ticket_data, timeout=5)
+        response.raise_for_status() # Lança erro para status HTTP 4xx/5xx
+        print(f"Sucesso: Ticket {ticket_data['id']} enviado para n8n. Status: {response.status_code}")
+    except requests.exceptions.RequestException as e:
+        # Captura erros de conexão, timeout, etc.
+        print(f"ERRO: Falha ao enviar ticket para n8n: {e}")
 
 # Endpoint GET para retornar métricas do dashboard geradas pelo script ETL
 @app.get("/metrics", tags=["Dashboard"])
@@ -169,3 +206,61 @@ def list_tickets(
     # O FastAPI e Pydantic convertem automaticamente os objetos ORM para JSON
     # usando o schema TicketBase definido no response_model
     return tickets
+
+# Endpoint PATCH para atualizar um ticket
+@app.patch("/tickets/{ticket_id}", response_model=TicketResponse, tags=["Tickets"])
+def update_ticket(
+    ticket_id: int, 
+    update_data: TicketUpdate,
+    db: Session = Depends(get_db) # Sessão do banco injetada via dependência
+):
+    """
+    Atualiza o status e/ou a prioridade de um ticket e dispara o webhook do n8n.
+    """
+    # Buscar o ticket no banco de dados
+    ticket = db.query(Ticket).filter(Ticket.id == ticket_id).first()
+    
+    # Se o ticket não existir, retorna erro 404
+    if not ticket:
+        raise HTTPException(status_code=404, detail=f"Ticket com ID {ticket_id} não encontrado.")
+    
+    # Aplicar as alterações
+    # Rastrea se algum campo foi realmente modificado
+    changes_made = False
+
+    # Atualiza o status se foi fornecido na requisição
+    # if update_data.status not in ["open", "pending", "closed"]: raise HTTPException(400, "Status inválido")
+    if update_data.status is not None:
+        # AQUI VOCÊ PODE ADICIONAR VALIDAÇÃO (ex: status in ["open", "pending", "closed"])
+        ticket.status = update_data.status
+        changes_made = True
+    
+    # Atualiza a prioridade se foi fornecida na requisição
+    # if update_data.priority not in ["low", "medium", "high"]: raise HTTPException(400, "Prioridade inválida")
+    if update_data.priority is not None:
+        # AQUI VOCÊ PODE ADICIONAR VALIDAÇÃO (ex: priority in ["low", "medium", "high"])
+        ticket.priority = update_data.priority
+        changes_made = True
+
+    # Se nenhum campo foi enviado para atualização (body vazio: {})    
+    if not changes_made:
+        # Retorna o ticket sem alterações
+        return ticket
+
+    
+    db.commit() # Salva as alterações no banco
+    db.refresh(ticket)
+    
+    # Converte o objeto ORM (ticket) para o formato JSON/dict
+    ticket_dict = TicketResponse.model_validate(ticket).model_dump()
+
+    # Serializa a data de criação para string ISO 8601
+    if 'created_at' in ticket_dict and isinstance(ticket_dict['created_at'], datetime):
+        # Converte o objeto datetime para uma string ISO 8601 (o formato ideal para JSON)
+        ticket_dict['created_at'] = ticket_dict['created_at'].isoformat()
+    
+    # Envia o payload para o n8n
+    send_to_n8n(ticket_dict)
+
+    # Retorna o ticket atualizado
+    return ticket
