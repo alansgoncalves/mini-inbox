@@ -13,7 +13,7 @@ export async function fetchTickets(searchTerm: string = ""): Promise<Ticket[]> {
   return api.get<Ticket[]>("/tickets", { query: { search: searchTerm } });
 }
 
-// Função para o PATCH 
+// Função para o para atulizar umm ticket 
 export async function updateTicket(id: number, data: { status?: 'open' | 'closed' | 'pending', priority?: 'low' | 'medium' | 'high' }) {
     return api.patch(`/tickets/${id}`, data);
 }
