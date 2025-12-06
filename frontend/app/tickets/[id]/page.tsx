@@ -54,7 +54,7 @@ export default async function TicketPage({ params }: TicketPageProps) {
 
   return (
     <main className="container mx-auto p-8">
-      <h1 className="text-3xl font-bold mb-6 text-gray-800">Ticket #{ticket.id}: {ticket.subject}</h1>
+      <h1 className="text-3xl font-bold mb-6 text-gray-500">Ticket #{ticket.id}: {ticket.subject}</h1>
       
       <div className="bg-white p-6 rounded-lg shadow-xl">
         <div className="grid grid-cols-2 gap-4 mb-6 text-gray-700">

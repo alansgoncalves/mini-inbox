@@ -63,12 +63,12 @@ export function TicketDetailForm({ initialTicket }: TicketDetailFormProps) {
 
       {/* Seção Status */}
       <div>
-        <label htmlFor="status" className="block text-sm font-medium text-gray-700">Status Atual</label>
+        <label htmlFor="status" className="block text-sm font-semibold text-gray-700">Status Atual</label>
         <select
           id="status"
           value={status}
           onChange={(e) => setStatus(e.target.value as Ticket['status'])}
-          className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+          className="block px-3 py-2.5 bg-white border border-blue-500 text-gray-800 text-sm rounded-md focus:ring-indigo-500 focus:border-indigo-500 shadow-sm placeholder:text-gray-600"
         >
           {STATUS_OPTIONS.map(opt => (
             <option key={opt} value={opt} className='capitalize'>{opt}</option>
@@ -78,12 +78,12 @@ export function TicketDetailForm({ initialTicket }: TicketDetailFormProps) {
 
       {/* Seção Prioridade */}
       <div>
-        <label htmlFor="priority" className="block text-sm font-medium text-gray-700">Prioridade</label>
+        <label htmlFor="priority" className="block text-sm font-semibold text-gray-700">Prioridade</label>
         <select
           id="priority"
           value={priority}
           onChange={(e) => setPriority(e.target.value as Ticket['priority'])}
-          className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+          className="block px-3 py-2.5 bg-white border border-blue-500 text-gray-800 text-sm rounded-md focus:ring-indigo-500 focus:border-indigo-500 shadow-sm placeholder:text-gray-600"
         >
           {PRIORITY_OPTIONS.map(opt => (
             <option key={opt} value={opt} className='capitalize'>{opt}</option>
