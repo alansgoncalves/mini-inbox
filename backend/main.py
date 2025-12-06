@@ -10,6 +10,27 @@ from .models import Ticket, create_tables, SessionLocal
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import List, Optional
+from fastapi.middleware.cors import CORSMiddleware
+
+app = FastAPI(title="Mini Inbox Backend")
+
+# --- CONFIGURAÇÃO CORS ---
+origins = [
+    # Permite acesso do seu frontend Next.js na porta 3000
+    "http://localhost:3000",
+    "http://127.0.0.1:3000", 
+    # Adicione a porta do backend se você a acessa diretamente, embora não seja necessário para o Next.js
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,              # Lista de origens permitidas
+    allow_credentials=True,             # Permite cookies (se necessário)
+    allow_methods=["*"],                # Permite todos os métodos (GET, POST, PATCH, OPTIONS, etc.)
+    allow_headers=["*"],                # Permite todos os headers
+)
+
+# --- EVENTOS DE INICIALIZAÇÃO ---
 
 # --- CONFIGURAÇÕES DE CAMINHO ---
 # Pega o caminho para o diretório raiz do projeto (main.py)
@@ -105,18 +126,11 @@ class TicketResponse(TicketBase):
     """
     pass # Não adiciona campos novos, apenas reutiliza os de TicketBase
 
-# --- INICIALIZAÇÃO DO APP ---
-
-# Cria a instância do FastAPI
-app = FastAPI(title="Mini Inbox Backend")
-
-# Decorator que executa a função quando o servidor inicia
 @app.on_event("startup")
 def startup_event():
-    """Executado quando o servidor inicia."""
-    # Cria as tabelas no banco se não existirem
-    create_tables() 
-    # Popula o banco se necessário
+    """Executa quando o servidor inicia."""
+    print("Iniciando o servidor...")
+    create_tables()
     seed_database()
 
 # --- CONFIGURAÇÃO DO N8N ---
@@ -183,7 +197,7 @@ def list_tickets(
     
     Exemplos de uso:
     - GET /tickets → retorna todos os tickets
-    - GET /tickets?search=problema → retorna tickets com "problema" no subject ou customer_name
+    - GET /tickets?search=Alan retorna tickets com "Alan" no subject ou customer_name
     """
 
     # Cria query base para buscar todos os tickets
@@ -215,7 +229,7 @@ def update_ticket(
     db: Session = Depends(get_db) # Sessão do banco injetada via dependência
 ):
     """
-    Atualiza o status e/ou a prioridade de um ticket e dispara o webhook do n8n.
+    Atualiza o status ou a prioridade de um ticket e dispara o webhook do n8n.
     """
     # Buscar o ticket no banco de dados
     ticket = db.query(Ticket).filter(Ticket.id == ticket_id).first()
