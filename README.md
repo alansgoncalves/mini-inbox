@@ -134,6 +134,7 @@ O payload é um objeto JSON que contém as informações do ticket atualizado (p
   "channel": "Email",
   "created_at": "2024-01-01T10:00:00"
 }
+```
 
 ## 📸 Demonstração e Evidências do MVP
 
@@ -142,10 +143,21 @@ Esta seção apresenta capturas de tela que comprovam o funcionamento da interfa
 ### 1. Interface (Dashboard ou Listagem de Tickets)
 
 **Evidência da Solução Frontend:**
-![Print da Interface do Dashboard](frontend/public/dashboard.png)
-![Print da Interface do Dashboard](frontend/public/tickets.png)
+
+/dashboard
+<img width="1432" height="964" alt="dashboard" src="https://github.com/user-attachments/assets/aba65728-575f-4d2d-9b8f-bb898c534c6c" />
+
+/tickets
+<img width="1425" height="979" alt="tickets" src="https://github.com/user-attachments/assets/8e0d10f5-f7a2-4e00-a50f-95fa30bd739d" />
+
 
 ### 2. Automação (Fluxo do n8n)
 
 **Evidência do Workflow n8n:**
-![Print do Workflow do n8n](frontend/public/n8n.png)
+
+workflow
+<img width="1681" height="1007" alt="fluxo_n8n" src="https://github.com/user-attachments/assets/0d623d4e-b0e8-4011-b642-62ab5a63604b" />
+
+webhook
+<img width="1130" height="904" alt="webhook" src="https://github.com/user-attachments/assets/6cdef384-9770-4cec-8a05-8bc7384cf9a5" />
+
