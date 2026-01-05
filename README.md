@@ -88,6 +88,38 @@ A n8n será usada para simular o envio de notificação (ex: Slack, Email) quand
     ```
     O Frontend estará acessível em `http://localhost:3000`.
 
+### 4. 🧪 Testes
+
+### Testes Backend
+Os testes do backend utilizam Pytest e focam em integração e unidades, utilizando um banco de dados SQLite em memória para garantir isolamento e velocidade.
+
+O que é testado:
+
+1. Cálculo e retorno de métricas (via mock de arquivos).
+2. Listagem geral de tickets e funcionalidade de busca.
+3. Atualização de status de tickets (incluindo o disparo assíncrono para o n8n).
+4. Tratamento de erros (ex: ticket não encontrado).
+
+### Como executar:
+```
+# Certifique-se de estar com o venv ativo
+cd backend
+pytest
+```
+
+### Testes Frontend
+Os testes do frontend utilizam Jest e focam na camada de serviços e consumo de API.
+
+O que é testado:
+
+O teste da função fetchMetrics garante que o serviço do Frontend está solicitando os dados no endpoint correto (/metrics) e utilizando o método HTTP adequado (GET)
+
+### Como executar:
+```
+# Certifique-se de estar na pasta /frontend
+npm test
+```
+
 ---
 
 ## 🌐 Endpoints e Rotas Principais
