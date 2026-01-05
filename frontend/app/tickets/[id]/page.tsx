@@ -48,7 +48,7 @@ export default async function TicketPage({ params }: TicketPageProps) {
       <main className="container mx-auto p-8">
         <h1 className="text-2xl font-bold mb-4 text-red-600">Erro ou Ticket Não Encontrado</h1>
         <p>{error || `O ticket com ID ${params.id} não foi encontrado.`}</p>
-        <p className="mt-4 text-indigo-600 hover:underline"><a href="/tickets">Voltar para a lista</a></p>
+        <p className="mt-4 text-indigo-600 hover:underline"><Link href="/tickets">Voltar para a listL</Link></p>
       </main>
     );
   }
